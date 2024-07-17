@@ -128,8 +128,36 @@ data "ibm_pi_instance_ip" "bastion_public_ip" {
   pi_network_name      = ibm_pi_network.public_network.pi_network_name
   pi_cloud_instance_id = var.service_instance_id
 }
+resource "null_resource" "bastion_fips" {
+  count = var.fips_compliant ? local.bastion_count : 0
+
+  connection {
+    type        = "ssh"
+    user        = var.rhel_username
+    host        = data.ibm_pi_instance_ip.bastion_public_ip[count.index].external_ip
+    private_key = var.private_key
+    agent       = var.ssh_agent
+    timeout      = "${var.connection_timeout}m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [<<EOF
+sudo fips-mode-setup --enable
+sudo systemctl reboot
+EOF
+    ]
+  }
+}
+
+resource "time_sleep" "fips_wait_30_seconds" {
+  depends_on = [null_resource.bastion_fips]
+  count      = var.fips_compliant ? 1 : 0
+
+  create_duration = "30s"
+}
 
 resource "null_resource" "bastion_init" {
+  depends_on = [time_sleep.fips_wait_30_seconds]
   count = local.bastion_count
 
   connection {
@@ -177,11 +205,6 @@ for cidr in "$${cidrs[@]}"; do
     sudo nmcli connection up "$con_name"
   done
 done
-
-# enable FIPS as required
-if [[ ${var.fips_compliant} = true ]]; then
-  sudo fips-mode-setup --enable
-fi
 
 EOF
     ]

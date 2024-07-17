@@ -60,6 +60,7 @@ locals {
     pool                  = { "start" : cidrhost(var.cidr, 2), "end" : cidrhost(var.cidr, -2) }
     chrony_config         = var.chrony_config
     chrony_config_servers = var.chrony_config_servers
+    fips                  = var.fips_compliant
 
     bootstrap_info = {
       ip   = var.bootstrap_ip
