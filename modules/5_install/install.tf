@@ -128,6 +128,7 @@ locals {
     storage_type             = var.storage_type
     log_level                = var.log_level
     release_image_override   = var.enable_local_registry ? local.local_registry_ocp_image : var.release_image_override
+    qe_only_disable_image_policy = var.qe_only_disable_image_policy
     enable_local_registry    = var.enable_local_registry
     fips_compliant           = var.fips_compliant
     rhcos_pre_kernel_options = local.rhcos_pre_kernel_options
